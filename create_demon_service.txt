@@ -1,0 +1,40 @@
+sudo vim /etc/systemd/system/ematrix_calcsalary_faceapp.service
+
+
+[Unit]
+Description=Ematrix Face App Python
+After=network.target
+
+[Service]
+User=root
+Group=root
+WorkingDirectory=/ematrix_calcsalary/pyapi/devfacerec_devwebapp/
+Environment="PATH=/devfacerec_devwebapp/env/bin"
+
+# The magic happens here: We call gunicorn, but tell it to use Uvicorn workers
+ExecStart=/devfacerec_devwebapp/env/bin/gunicorn uvicorn app:app \
+          --workers 3 \
+          --timeout 1200 \
+          --bind 0.0.0.0:8001
+
+Restart=always
+
+# I updated the log file names to reflect gunicorn, but you can keep them as uvicorn.log if you prefer!
+StandardOutput=append:ematrix_calcsalary/pyapi/devfacerec_devwebapp/gunicorn.log
+StandardError=append:ematrix_calcsalary/pyapi/devfacerec_devwebapp/gunicorn.log
+
+[Install]
+WantedBy=multi-user.target
+
+
+sudo systemctl daemon-reload
+sudo systemctl enable ematrix_calcsalary_faceapp
+sudo systemctl start ematrix_calcsalary_faceapp
+sudo systemctl status ematrix_calcsalary_faceapp
+sudo systemctl restart ematrix_calcsalary_faceapp
+sudo systemctl stop ematrix_calcsalary_faceapp
+
+cp -r /360Pipe/python_services/dev/signatureScraper_service_dev/* /360Pipe/python_services/dev/signatureScraper_service/
+
+tail -f /ematrix_calcsalary/pyapi/devfacerec_devwebapp/gunicorn.log
+tail -f /360Pipe/python_services/dev/signatureScraper_service/logs/signatureScraper_service.log

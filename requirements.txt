@@ -1,0 +1,14 @@
+fastapi
+uvicorn # uvicorn is used to run FastAPI, [standard] includes httptools and websockets
+sqlalchemy
+python-multipart # Required for FastAPI's UploadFile and Form
+opencv-python # For cv2
+faiss-cpu # For FAISS, use faiss-gpu if you have a compatible GPU setup
+numpy # DeepFace and FAISS depend on numpy
+pydantic # Core dependency for FastAPI data validation
+python-dotenv # For loading environment variables from .env files
+deepface # Ensure this version is compatible with your Python and TF/Torch setup
+# tensorflow-cpu # Use tensorflow-cpu if you don't need GPU support
+mysql-connector-python
+tf-keras
+insightface==0.7.3
