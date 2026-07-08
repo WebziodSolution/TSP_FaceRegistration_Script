@@ -1,40 +1,40 @@
-sudo vim /etc/systemd/system/ematrix_calcsalary_faceapp.service
+sudo vim /etc/systemd/system/chrome_python_service.service
 
-
+/devwebapp/chrome_python_service
 [Unit]
-Description=Ematrix Face App Python
+Description=Chrome Python Service
 After=network.target
 
 [Service]
 User=root
 Group=root
-WorkingDirectory=/ematrix_calcsalary/pyapi/devfacerec_devwebapp/
-Environment="PATH=/devfacerec_devwebapp/env/bin"
+WorkingDirectory=/devwebapp/chrome_python_service
+Environment="PATH=/devwebapp/chrome_python_service/venv/bin"
 
 # The magic happens here: We call gunicorn, but tell it to use Uvicorn workers
-ExecStart=/devfacerec_devwebapp/env/bin/gunicorn uvicorn app:app \
+ExecStart=/devwebapp/chrome_python_service/venv/bin/gunicorn app:app \
           --workers 3 \
           --timeout 1200 \
-          --bind 0.0.0.0:8001
+          --bind 0.0.0.0:8000
 
 Restart=always
 
 # I updated the log file names to reflect gunicorn, but you can keep them as uvicorn.log if you prefer!
-StandardOutput=append:ematrix_calcsalary/pyapi/devfacerec_devwebapp/gunicorn.log
-StandardError=append:ematrix_calcsalary/pyapi/devfacerec_devwebapp/gunicorn.log
+StandardOutput=append:/devwebapp/chrome_python_service/gunicorn.log
+StandardError=append:/devwebapp/chrome_python_service/gunicorn.log
 
 [Install]
 WantedBy=multi-user.target
 
 
 sudo systemctl daemon-reload
-sudo systemctl enable ematrix_calcsalary_faceapp
-sudo systemctl start ematrix_calcsalary_faceapp
-sudo systemctl status ematrix_calcsalary_faceapp
-sudo systemctl restart ematrix_calcsalary_faceapp
-sudo systemctl stop ematrix_calcsalary_faceapp
+sudo systemctl enable chrome_python_service
+sudo systemctl start chrome_python_service
+sudo systemctl status chrome_python_service
+sudo systemctl restart chrome_python_service
+sudo systemctl stop chrome_python_service
 
-cp -r /360Pipe/python_services/dev/signatureScraper_service_dev/* /360Pipe/python_services/dev/signatureScraper_service/
+cp -r /devwebapp/chrome_python_service/dev/* /devwebapp/chrome_python_service/
 
-tail -f /ematrix_calcsalary/pyapi/devfacerec_devwebapp/gunicorn.log
-tail -f /360Pipe/python_services/dev/signatureScraper_service/logs/signatureScraper_service.log
+tail -f /devwebapp/chrome_python_service/gunicorn.log
+tail -f /devwebapp/chrome_python_service/gunicorn.log

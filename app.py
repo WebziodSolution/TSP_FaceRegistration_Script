@@ -1,19 +1,17 @@
 import os
-# Suppress TensorFlow warnings and optimize memory usage
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress INFO, WARNING, and ERROR messages
-os.environ['TF_GPU_ALLOCATOR'] = 'cuda_malloc_async'
-os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
-
-# Configure TensorFlow to use CPU only (reduces memory overhead)
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # Disable GPU, use CPU only
-
-# Set memory limits for TensorFlow
-import tensorflow as tf
-tf.config.set_soft_device_placement(True)
-
-# Limit CPU threads to reduce memory usage
-tf.config.threading.set_intra_op_parallelism_threads(1)
-tf.config.threading.set_inter_op_parallelism_threads(1)
+import cv2
+import numpy as np
+from typing import List
+from insightface.app import FaceAnalysis
+ 
+# Initialize the model ONCE globally at startup (saves memory and request time).
+# 'buffalo_s' is highly optimized for CPU, uses very little memory, 
+# and generates 512-dimensional ArcFace embeddings.
+face_app = FaceAnalysis(name='buffalo_s')
+ 
+# ctx_id=-1 completely forces CPU inference (replaces your os.environ CUDA blocks)
+# det_size caps the detector resolution, keeping memory predictable
+face_app.prepare(ctx_id=-1, det_size=(640, 640))
 
 # Now import the rest of your modules
 import faiss
@@ -28,7 +26,6 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Depends, Bac
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 import cv2
-from deepface import DeepFace
 
 
 from database import SessionLocal, engine, Base, get_db
@@ -82,45 +79,42 @@ def validate_image(image_bytes: bytes):
         logging.error(f"Image validation error: {e}", exc_info=True)
         raise HTTPException(status_code=400, detail=f"Invalid image file: {e}")
     
-
 def get_embedding(image_np: np.ndarray) -> List[float]:
     """
-    Generates a 512-dimensional face embedding using DeepFace's ArcFace model.
-    Returns a normalized embedding list. Raises HTTPException on failure.
+    Generates a 512-dimensional face embedding using InsightFace (ArcFace).
+    Returns a normalized embedding list. Raises ValueError on failure.
     """
     try:
-        # Optimize image size before processing
-        # Resize to reduce memory usage (ArcFace works well with 112x112)
+        # Optimize image size before processing (your original logic)
         height, width = image_np.shape[:2]
         if height > 640 or width > 640:
-            # Maintain aspect ratio
             scale = 640 / max(height, width)
             new_width = int(width * scale)
             new_height = int(height * scale)
-            image_np = cv2.resize(image_np, (new_width, new_height), 
-                                 interpolation=cv2.INTER_AREA)
-        
-          # Use Facenet which is lighter than ArcFace
-        embedding_objs = DeepFace.represent(
-            img_path=image_np,
-            model_name=FACE_MODEL,  # Use configured model
-            enforce_detection=True,
-            detector_backend='opencv',  # Lightweight detector
-            align=False
-        )
-
-        if not embedding_objs:
+            image_np = cv2.resize(image_np, (new_width, new_height),
+                                  interpolation=cv2.INTER_AREA)
+ 
+        # Detect face and extract embeddings via ONNX
+        faces = face_app.get(image_np)
+ 
+        if not faces:
             raise ValueError("No face embedding returned. Possibly no face detected.")
-
-        # Extract and normalize the first detected face's embedding
-        embedding = np.array(embedding_objs[0]["embedding"], dtype="float32")
+ 
+        # Extract the first detected face's embedding
+        # InsightFace natively returns a float32 numpy array
+        embedding = faces[0].embedding
         norm = np.linalg.norm(embedding)
-
+ 
         if norm == 0:
             raise ValueError("Zero-norm embedding vector detected. Cannot normalize.")
-
+ 
+        # Normalize the embedding vector
         normalized_embedding = embedding / norm
         return normalized_embedding.tolist()
+ 
+    except Exception as e:
+        # Re-raise to be handled by your FastAPI exception handlers
+        raise ValueError(f"Face processing failed: {str(e)}")
 
     except ValueError as ve:
         logging.error(f"Face detection error: {ve}", exc_info=True)
