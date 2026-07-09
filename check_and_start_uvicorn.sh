@@ -28,4 +28,4 @@ else
 fi
 # */3 * * * * sh /devfacerec_devwebapp/check_and_start_uvicorn.sh
 
-# uvicorn app:app --host 127.0.0.1 --port 8001 --workers 1 --timeout-keep-alive 180 "/devfacerec_devwebapp/uvicorn.log" 2>&1 &
+# uvicorn app:app --host 127.0.0.1 --port 8001 --workers 1 --timeout-keep-alive 180 > /devfacerec_devwebapp/uvicorn.log 2>&1 &

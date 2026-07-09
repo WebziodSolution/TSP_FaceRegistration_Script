@@ -1,40 +1,43 @@
-sudo vim /etc/systemd/system/chrome_python_service.service
+sudo vim /etc/systemd/system/faceRegistration_service.service
 
-/devwebapp/chrome_python_service
 [Unit]
-Description=Chrome Python Service
+Description=Face Registration Service
 After=network.target
 
 [Service]
 User=root
 Group=root
-WorkingDirectory=/devwebapp/chrome_python_service
-Environment="PATH=/devwebapp/chrome_python_service/venv/bin"
+WorkingDirectory=/devfacerec_devwebapp/
+Environment="PATH=/devfacerec_devwebapp/env/bin"
 
 # The magic happens here: We call gunicorn, but tell it to use Uvicorn workers
-ExecStart=/devwebapp/chrome_python_service/venv/bin/gunicorn app:app \
+ExecStart=/devfacerec_devwebapp/env/bin/gunicorn app:app \
           --workers 3 \
+          --worker-class uvicorn.workers.UvicornWorker \
           --timeout 1200 \
-          --bind 0.0.0.0:8000
+          --bind 127.0.0.1:8000
 
 Restart=always
 
 # I updated the log file names to reflect gunicorn, but you can keep them as uvicorn.log if you prefer!
-StandardOutput=append:/devwebapp/chrome_python_service/gunicorn.log
-StandardError=append:/devwebapp/chrome_python_service/gunicorn.log
+StandardOutput=append:/devfacerec_devwebapp/gunicorn.log
+StandardError=append:/devfacerec_devwebapp/gunicorn.log
 
 [Install]
 WantedBy=multi-user.target
 
 
 sudo systemctl daemon-reload
-sudo systemctl enable chrome_python_service
-sudo systemctl start chrome_python_service
-sudo systemctl status chrome_python_service
-sudo systemctl restart chrome_python_service
-sudo systemctl stop chrome_python_service
+sudo systemctl enable faceRegistration_service
+sudo systemctl start faceRegistration_service
+sudo systemctl status faceRegistration_service
+sudo systemctl restart faceRegistration_service
+sudo systemctl stop faceRegistration_service
 
-cp -r /devwebapp/chrome_python_service/dev/* /devwebapp/chrome_python_service/
+cp -r /devfacerec_devwebapp/dev/* /devfacerec_devwebapp/
 
-tail -f /devwebapp/chrome_python_service/gunicorn.log
-tail -f /devwebapp/chrome_python_service/gunicorn.log
+tail -f /devfacerec_devwebapp/gunicorn.log
+tail -f /devfacerec_devwebapp/gunicorn.log
+
+
+*/3 * * * * /devfacerec_devwebapp/env/bin/gunicorn app:app -k uvicorn.workers.UvicornWorker --workers 3 --timeout 1200 --bind 127.0.0.1:8000 >> /devfacerec_devwebapp/gunicorn.log 2>&1

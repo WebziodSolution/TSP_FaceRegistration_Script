@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(override=True)
 
 # Use DATABASE_URL_PROD if ENV=prod, else DATABASE_URL (local/dev)
 ENV = os.getenv("ENV", "local").lower()
