@@ -12,6 +12,8 @@ ENV = os.getenv("ENV", "local").lower()
 print("============ ENV ================"+ENV)
 if ENV == "prod":
     SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL_PROD")
+elif ENV == "dev":
+    SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL_DEV")
 else:
     SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
