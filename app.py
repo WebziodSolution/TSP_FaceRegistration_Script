@@ -7,7 +7,8 @@ import logging
 import time
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, HTTPException, Form, Depends, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Form, Depends, BackgroundTasks, Request
+from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -31,6 +32,40 @@ app.add_middleware(
     allow_methods=["*"],       # ✅ Allow all HTTP methods
     allow_headers=["*"],       # ✅ Allow all headers
 )
+
+
+@app.middleware("http")
+async def client_ip_restriction_middleware(request: Request, call_next):
+    import os
+    env = os.getenv("ENV", "local").lower()
+    if env == "prod":
+        # Extract IP
+        x_forwarded_for = request.headers.get("x-forwarded-for")
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0].strip()
+        else:
+            ip = request.client.host if request.client else None
+
+        if not ip:
+            return PlainTextResponse("Access Denied: Client IP address cannot be determined.", status_code=403)
+
+        allowed_ips = ['127.0.0.1', '::1', '150.129.166.38']
+        allowed_prefixes = ['192.168.1.', '150.129.166.']
+
+        is_allowed = False
+        if ip in allowed_ips:
+            is_allowed = True
+        else:
+            for prefix in allowed_prefixes:
+                if ip.startswith(prefix):
+                    is_allowed = True
+                    break
+
+        if not is_allowed:
+            return PlainTextResponse(f"Access Denied: IP {ip} is not whitelisted.", status_code=403)
+
+    response = await call_next(request)
+    return response
 
 
 def euclidean_distance(a: List[float], b: List[float]) -> float:
