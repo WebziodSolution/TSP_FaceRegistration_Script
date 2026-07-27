@@ -23,7 +23,11 @@ if not SQLALCHEMY_DATABASE_URL:
 # Log DB connection attempt
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 try:
-    engine = create_engine(SQLALCHEMY_DATABASE_URL)
+    engine = create_engine(
+        SQLALCHEMY_DATABASE_URL,
+        pool_recycle=3600,
+        pool_pre_ping=True
+    )
     # Try connecting to DB
     with engine.connect() as conn:        
         logging.info("-------------- Database connection successful. --------------")
