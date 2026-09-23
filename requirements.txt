@@ -7,3 +7,5 @@ pydantic # Core dependency for FastAPI data validation
 python-dotenv # For loading environment variables from .env files
 # tensorflow-cpu # Use tensorflow-cpu if you don't need GPU support
 mysql-connector-python
+insightface
+onnxruntime

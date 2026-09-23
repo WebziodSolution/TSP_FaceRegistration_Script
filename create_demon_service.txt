@@ -62,7 +62,7 @@ ExecStart=/devfacerec_devwebapp/env/bin/gunicorn \
     app:app \
     --workers 3 \
     --timeout 1200 \
-    --bind 0.0.0.0:8001
+    --bind 0.0.0.0:800
 
 Restart=always
 
